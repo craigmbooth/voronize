@@ -1,2 +1,1 @@
-# voronize
-Convert images to voronoi tesselations and drive a plotter
+python voronize.py sources/skull.png 10000 --power 1
