@@ -18,7 +18,7 @@ def rgb2gray(rgb):
     gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
     return gray
 
-def image_to_voronoi(img_file, n_points, power):
+def image_to_voronoi(img_file, n_points, power, invert=False):
     """Given the filename of an image, the number of random points to drop on
     there and a power representing the mapping between pixel darkness and
     probability of containing a point, place points on pixels weighted by their
@@ -32,7 +32,12 @@ def image_to_voronoi(img_file, n_points, power):
         temp = rgb2gray(temp)
 
     npix = temp.shape[0] * temp.shape[1]
-    temp = (255 - temp) ** power
+
+    if invert is False:
+        temp = (255 - temp) ** power
+    else:
+        temp = temp ** power
+
     img_sum = sum(temp)
     temp = n_points * temp / img_sum
 
