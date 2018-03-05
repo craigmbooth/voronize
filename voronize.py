@@ -1,21 +1,29 @@
 import argparse
 import random
 
-from PIL import Image
-from numpy import*
 import matplotlib.pyplot as plt
+from numpy import*
+from PIL import Image
+import serial
 from scipy.spatial import Voronoi, voronoi_plot_2d
+
+from plotter import Plotter
 
 IMG_SCALE = 8
 
 def rgb2gray(rgb):
-
+    """Given an (nx x ny x 3) array, flatten it into a greyscale image
+    """
     r, g, b = rgb[:,:,0], rgb[:,:,1], rgb[:,:,2]
     gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
-
     return gray
 
 def image_to_voronoi(img_file, n_points, power):
+    """Given the filename of an image, the number of random points to drop on
+    there and a power representing the mapping between pixel darkness and
+    probability of containing a point, place points on pixels weighted by their
+    darkness, then do a voronoi tessellation on the resulting points and return
+    the scipy voronoi tesselation object"""
 
     temp=asarray(Image.open(img_file)).astype('float')
 
@@ -65,23 +73,6 @@ def yield_voronoi_segments(vor):
             far_point = vor.vertices[i] + direction * ptp_bound.max()
             yield [vor.vertices[i], far_point]
 
-class Plotter():
-
-    def __init__(self, verbose=False):
-        self.verbose = verbose
-
-    def __enter__(self):
-        if self.verbose is True:
-            print "IN;"
-            print "SP1;"
-        return self
-
-    def __exit__(self, *args):
-        if self.verbose is True:
-            print "PU;"
-
-    def write_segment(self, segment):
-        pass
 
 
 def draw_voronoi(vor, verbose=False):
@@ -107,6 +98,7 @@ def plot_voronoi(image, vor, verbose=False):
     plt.ylim([0,image.shape[1]])
 
     plt.show(block=False)
+
     res = raw_input("Do you want to keep this one? [y/n]")
     return res in ["y", "Y"]
 
@@ -124,7 +116,9 @@ def main():
     keep = plot_voronoi(image, vor, args.verbose)
 
     if keep is True:
-        draw_voronoi(vor)
+
+
+        draw_voronoi(vor, verbose=args.verbose)
     else:
         if args.verbose is True:
             print "Discarding image"
