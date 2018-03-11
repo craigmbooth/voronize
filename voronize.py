@@ -1,4 +1,5 @@
 import argparse
+import logging
 import random
 
 import matplotlib.pyplot as plt
@@ -8,38 +9,45 @@ import serial
 from scipy.spatial import Voronoi, voronoi_plot_2d
 
 from plotter import Plotter
+import util
+
 
 IMG_SCALE = 8
 
 def rgb2gray(rgb):
     """Given an (nx x ny x 3) array, flatten it into a greyscale image
+
+    The coefficients here are from Matlab's NTSC/PAL implementation
     """
     r, g, b = rgb[:,:,0], rgb[:,:,1], rgb[:,:,2]
     gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
     return gray
 
-def image_to_voronoi(img_file, n_points, power, invert=False):
+def image_to_voronoi(img_file, n_points, power=power, floor=0,
+                     ceil = 255):
     """Given the filename of an image, the number of random points to drop on
     there and a power representing the mapping between pixel darkness and
     probability of containing a point, place points on pixels weighted by their
     darkness, then do a voronoi tessellation on the resulting points and return
-    the scipy voronoi tesselation object"""
+    the scipy voronoi tesselation object
+    """
 
     temp=asarray(Image.open(img_file)).astype('float')
+    logging.info("Loaded image {}".format(img_file))
+    logging.info("Image has size {}x{}".format(temp.shape[0], temp.shape[1]))
 
     # Greyscale images are 2d arrays, color ones are 3d (x, y)
     if len(temp.shape) > 2:
+        logging.info("Image is in color, changing to greyscale")
         temp = rgb2gray(temp)
 
-    npix = temp.shape[0] * temp.shape[1]
+    temp = (255 - temp)
+    temp[temp < floor] = floor
+    temp[temp > ceil] = ceil
+    temp = temp ** power
 
-    if invert is False:
-        temp = (255 - temp) ** power
-    else:
-        temp = temp ** power
-
-    img_sum = sum(temp)
-    temp = n_points * temp / img_sum
+    # Convert each point to the probability of containing a point
+    temp = n_points * temp / sum(temp)
 
     actual_points = 0
     points = []
@@ -48,12 +56,11 @@ def image_to_voronoi(img_file, n_points, power, invert=False):
             if temp[ii][jj] > random.random():
                 actual_points += 1
                 points.append((ii,jj))
-    print "Points requested: {}".format(n_points)
-    print "Actual points generated: {}".format(actual_points)
 
-    vor = Voronoi(points)
+    logging.info("Points requested: {}".format(n_points))
+    logging.info("Actual points generated: {}".format(actual_points))
 
-    return temp, vor
+    return temp, Voronoi(points)
 
 def yield_voronoi_segments(vor):
 
@@ -79,18 +86,19 @@ def yield_voronoi_segments(vor):
             yield [vor.vertices[i], far_point]
 
 
-
 def draw_voronoi(vor, verbose=False):
-    with Plotter(verbose=verbose) as p:
+    with Plotter(verbose=verbose, mock=True) as p:
         for segment in yield_voronoi_segments(vor):
             p.write_segment(segment)
 
 
 def plot_voronoi(image, vor, verbose=False):
+    """Given a 2d image array and its voronoi tesselation, plot the voronoi
+    tesselation, and ask whether to keep it
+    """
 
     aspect_ratio = float(image.shape[0]) / image.shape[1]
-    if verbose is True:
-        print "Image has aspect ratio: {}".format(aspect_ratio)
+    logging.debug("Image has aspect ratio: {}".format(aspect_ratio))
 
     voronoi_plot_2d(vor, show_points=False, show_vertices=False)
     fig = plt.gcf()
@@ -108,25 +116,31 @@ def plot_voronoi(image, vor, verbose=False):
     return res in ["y", "Y"]
 
 def main():
+
     parser = argparse.ArgumentParser()
     parser.add_argument("filename", type=str)
     parser.add_argument("vertices", type=int)
     parser.add_argument("--power", type=float, default=1.0)
+    parser.add_argument("--floor", type=float, default=0)
+    parser.add_argument("--ceil", type=float, default=255)
     parser.add_argument('--verbose', dest='verbose', action='store_true')
     parser.add_argument('--no-feature', dest='verbose', action='store_false')
     parser.set_defaults(verbose=False)
     args = parser.parse_args()
 
-    image, vor = image_to_voronoi(args.filename, args.vertices, args.power)
+    util.init_logger(verbose=args.verbose)
+    for arg in args._get_kwargs():
+        logging.debug("Argument {} is {}".format(arg[0], arg[1]))
+
+    image, vor = image_to_voronoi(args.filename, args.vertices, power=args.power,
+                                  floor=args.floor, ceil=args.ceil)
     keep = plot_voronoi(image, vor, args.verbose)
 
     if keep is True:
-
-
         draw_voronoi(vor, verbose=args.verbose)
     else:
         if args.verbose is True:
-            print "Discarding image"
+            logging.info("Discarding image")
 
 if __name__ == "__main__":
     main()
