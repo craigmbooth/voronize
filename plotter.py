@@ -1,20 +1,20 @@
 """Class abstracts the pen plotter.  Handles startup and shutdown boilerplate,
 and takes care of sending to the serial port."""
 import logging
-
+import time
 import serial
 
 class Plotter():
 
     def __init__(self, verbose=False, baudrate=9600, addr=5, gpib=True,
-                 paper_size="US-A", mock=False):
+                 paper_size="US-A", mock=False,
+                 device="/dev/tty.usbserial-PX1ULOFL"):
 
         self.verbose = verbose
         self.mock = mock
 
         if mock is False:
-            self.serial = serial.Serial('/dev/ttyUSB0', baudrate=baudrate,
-                parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE)
+            self.serial = serial.Serial(device)
             logging.info("Opened serial port {}".format(self.serial.name))
         else:
             self.serial = {}
@@ -70,11 +70,13 @@ class Plotter():
         """Convert whatever is in string to bytes and send it to the serial port
         """
         logging.debug("[SEND-TO-PORT]: {}".format(string))
+
         if self.mock is False:
-            self.serial.write(string.encode('ASCII'))
+            time.sleep(0.3)
+            self.serial.write(string+"\r")
 
     def write_segment(self, segment):
         point_from = segment[0]
         point_to = segment[1]
-        self._send_raw("PU{},{};".format(point_from[0], point_from[1]))
-        self._send_raw("PD{},{};".format(point_to[0], point_to[1]))
+        self._send_raw("PU{},{};".format(int(point_from[0]), int(point_from[1])))
+        self._send_raw("PD{},{};".format(int(point_to[0]), int(point_to[1])))
