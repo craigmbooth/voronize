@@ -1,6 +1,7 @@
 import argparse
 import logging
 import random
+import time
 
 import matplotlib.pyplot as plt
 from numpy import*
@@ -86,11 +87,16 @@ def yield_voronoi_segments(vor):
             yield [vor.vertices[i], far_point]
 
 
-def draw_voronoi(vor, verbose=False):
-    with Plotter(verbose=verbose, mock=True) as p:
+def draw_voronoi(vor, img_size, verbose=False, dryrun=False):
+
+
+    start = time.time()
+    with Plotter(verbose=verbose, dryrun=dryrun) as p:
+        p.set_image_scale(img_size)
         for segment in yield_voronoi_segments(vor):
             p.write_segment(segment)
-
+    end = time.time()
+    logging.info("Drawing took {}s".format((end-start)))
 
 def plot_voronoi(image, vor, verbose=False):
     """Given a 2d image array and its voronoi tesselation, plot the voronoi
@@ -113,7 +119,7 @@ def plot_voronoi(image, vor, verbose=False):
     plt.show(block=False)
 
     res = raw_input("Do you want to keep this one? [y/n]")
-    return res in ["y", "Y"]
+    return (res in ["y", "Y"], image.shape)
 
 def main():
 
@@ -124,8 +130,10 @@ def main():
     parser.add_argument("--floor", type=float, default=0)
     parser.add_argument("--ceil", type=float, default=255)
     parser.add_argument('--verbose', dest='verbose', action='store_true')
-    parser.add_argument('--no-feature', dest='verbose', action='store_false')
     parser.set_defaults(verbose=False)
+    parser.add_argument('--dry-run', dest='dryrun', action='store_true')
+    parser.set_defaults(dryrun=False)
+
     args = parser.parse_args()
 
     util.init_logger(verbose=args.verbose)
@@ -134,10 +142,10 @@ def main():
 
     image, vor = image_to_voronoi(args.filename, args.vertices, power=args.power,
                                   floor=args.floor, ceil=args.ceil)
-    keep = plot_voronoi(image, vor, args.verbose)
+    keep, img_size = plot_voronoi(image, vor, verbose=args.verbose)
 
     if keep is True:
-        draw_voronoi(vor, verbose=args.verbose)
+        draw_voronoi(vor, img_size, verbose=args.verbose, dryrun=args.dryrun)
     else:
         if args.verbose is True:
             logging.info("Discarding image")
