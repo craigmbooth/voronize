@@ -89,5 +89,5 @@ class Plotter():
         point_from = segment[0]*self.scale_ratio
         point_to = segment[1]*self.scale_ratio
         self._send_raw("PU{},{};".format(int(point_from[0]),
-                                         int(point_from[1])), 0.17)
+                                         int(point_from[1])), 0.19)
         self._send_raw("PD{},{};".format(int(point_to[0]), int(point_to[1])))
