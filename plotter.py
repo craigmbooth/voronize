@@ -59,7 +59,12 @@ class Plotter():
         datastream and select pen 1
         """
         self._send_raw("IN;")
-        self._send_raw("SP1;", 3)
+        model = self._send_raw("OI;", read=True)
+        resolution = self._send_raw("OF;", read=True)
+        logging.debug("{} plotter has plotting resolution {}".format(
+            model, resolution))
+
+        self._send_raw("SP1;")
         return self
 
     def __exit__(self, *args):
@@ -68,14 +73,31 @@ class Plotter():
         """
         self._send_raw("SP0;")
 
-    def _send_raw(self, string, sleep=0):
+    def _send_raw(self, string, read=False):
         """Convert whatever is in string to bytes and send it to the serial port
         """
         logging.debug("[SEND-TO-PORT]: {}".format(string))
+        if self.dryrun is True:
+            return
 
-        if self.dryrun is False:
-            self.serial.write(string+"\r")
-            time.sleep(sleep)
+        # Check if the plotter is ready for input
+        while True:
+            self.serial.write("OS;"+"\r")
+            status = self.serial.readline().rstrip("\r\n")
+            status_bin = "{0:b}".format(int(status))
+            ready = status_bin[-5]
+            if ready == "1":
+                # We're good... a 1 in the 16 value (position 4) part of this
+                # binary number means "Send me data"
+                break
+            logging.warning("Buffer full.  Plotter asked for more time...")
+            time.sleep(0.01)
+
+        # The actual send
+        self.serial.write(string+"\r")
+
+        if read is True:
+            return self.serial.readline().rstrip("\r\n")
 
     def set_image_scale(self, img_size):
 
@@ -88,6 +110,8 @@ class Plotter():
     def write_segment(self, segment):
         point_from = segment[0]*self.scale_ratio
         point_to = segment[1]*self.scale_ratio
+
         self._send_raw("PU{},{};".format(int(point_from[0]),
-                                         int(point_from[1])), 0.19)
-        self._send_raw("PD{},{};".format(int(point_to[0]), int(point_to[1])))
+                                         int(point_from[1])))
+        self._send_raw("PD{},{};".format(int(point_to[0]),
+                                         int(point_to[1])))
