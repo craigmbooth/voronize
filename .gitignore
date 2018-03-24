@@ -1,3 +1,6 @@
+# Ignore images in here unless I add them
+sources/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
