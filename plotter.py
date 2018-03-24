@@ -13,6 +13,9 @@ class Plotter():
         self.verbose = verbose
         self.dryrun = dryrun
 
+        self.current_x = None
+        self.current_y = None
+
         if dryrun is False:
             self.serial = serial.Serial(device)
             logging.info("Opened serial port {}".format(self.serial.name))
@@ -111,7 +114,12 @@ class Plotter():
         point_from = segment[0]*self.scale_ratio
         point_to = segment[1]*self.scale_ratio
 
-        self._send_raw("PU{},{};".format(int(point_from[0]),
-                                         int(point_from[1])))
-        self._send_raw("PD{},{};".format(int(point_to[0]),
-                                         int(point_to[1])))
+        if not (self.current_x == point_from[0] and
+                self.current_y == point_from[1]):
+            self._send_raw("PU{},{};".format(point_from[0],
+                                            point_from[1]))
+
+        self._send_raw("PD{},{};".format(point_to[0],
+                                         point_to[1]))
+        self.current_x = point_to[0]
+        self.current_y = point_to[1]

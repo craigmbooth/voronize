@@ -73,7 +73,7 @@ def yield_voronoi_segments(vor):
     for pointidx, simplex in zip(vor.ridge_points, vor.ridge_vertices):
         simplex = asarray(simplex)
         if all(simplex >= 0):
-            yield vor.vertices[simplex]
+            yield vor.vertices[simplex].astype(int)
         else:
             i = simplex[simplex >= 0][0]  # finite end Voronoi vertex
 
@@ -84,19 +84,54 @@ def yield_voronoi_segments(vor):
             midpoint = vor.points[pointidx].mean(axis=0)
             direction = sign(dot(midpoint - center, n)) * n
             far_point = vor.vertices[i] + direction * ptp_bound.max()
-            yield [vor.vertices[i], far_point]
+            yield [vor.vertices[i].astype(int), far_point.astype(int)]
+
+
+def pop_line_seg_starts_at(segments, start):
+    """Second argument is whether we had to flip the segment"""
+    for i, segment in enumerate(segments):
+        if array_equal(segment[0], start):
+            return i, False
+        elif array_equal(segment[1], start):
+            return i, True
+    return -1, False
+
+
+def sort_segments(segments):
+    sorted_segments = []
+    while len(segments) > 0:
+        logging.debug("\t[OPTIMIZER] Length of segments: {}".format(
+            len(segments)))
+        # start of a new line
+        current_line = []
+        current_line.append(segments.pop())
+        while True:
+            cl_end = current_line[-1][1]
+            indx, rev = pop_line_seg_starts_at(segments, cl_end)
+            if indx == -1:
+                break
+            else:
+                if rev is True:
+                    app_seg = segments.pop(indx)
+                    current_line.append(array([app_seg[1], app_seg[0]]))
+                else:
+                    current_line.append(segments.pop(indx))
+        sorted_segments.extend(current_line)
+    return sorted_segments
 
 
 def draw_voronoi(vor, img_size, verbose=False, dryrun=False):
 
+    segments = sort_segments(list(yield_voronoi_segments(vor)))
 
     start = time.time()
     with Plotter(verbose=verbose, dryrun=dryrun) as p:
         p.set_image_scale(img_size)
-        for segment in yield_voronoi_segments(vor):
+        for segment in segments:
             p.write_segment(segment)
     end = time.time()
     logging.info("Drawing took {}s".format((end-start)))
+
 
 def plot_voronoi(image, vor, verbose=False):
     """Given a 2d image array and its voronoi tesselation, plot the voronoi
