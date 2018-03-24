@@ -116,10 +116,10 @@ class Plotter():
 
         if not (self.current_x == point_from[0] and
                 self.current_y == point_from[1]):
-            self._send_raw("PU{},{};".format(point_from[0],
-                                            point_from[1]))
+            self._send_raw("PU{},{};".format(int(point_from[0]),
+                                            int(point_from[1])))
 
-        self._send_raw("PD{},{};".format(point_to[0],
-                                         point_to[1]))
+        self._send_raw("PD{},{};".format(int(point_to[0]),
+                                         int(point_to[1])))
         self.current_x = point_to[0]
         self.current_y = point_to[1]

@@ -4,7 +4,8 @@ import random
 import time
 
 import matplotlib.pyplot as plt
-from numpy import*
+from numpy import *
+import networkx as nx
 from PIL import Image
 import serial
 from scipy.spatial import Voronoi, voronoi_plot_2d
@@ -86,43 +87,80 @@ def yield_voronoi_segments(vor):
             far_point = vor.vertices[i] + direction * ptp_bound.max()
             yield [vor.vertices[i].astype(int), far_point.astype(int)]
 
-
-def pop_line_seg_starts_at(segments, start):
-    """Second argument is whether we had to flip the segment"""
-    for i, segment in enumerate(segments):
-        if array_equal(segment[0], start):
-            return i, False
-        elif array_equal(segment[1], start):
-            return i, True
-    return -1, False
-
+def get_neighbors(G, source):
+    all_neighbors = [(x, G.degree(x)) for x in G.neighbors(source)]
+    if len(all_neighbors) == 0:
+        return []
+    max_degree = max([x[1] for x in all_neighbors])
+    return [x[0] for x in all_neighbors if x[1] == max_degree]
 
 def sort_segments(segments):
+    logging.info("[OPTIMIZER] Starting path optimization...")
+    G = nx.Graph()
+
+    nodes = set()
+    for s in segments:
+        nfrom = "{},{}".format(s[0][0], s[0][1])
+        nto = "{},{}".format(s[1][0], s[1][1])
+        G.add_node(nfrom, x=s[0][0], y=s[0][1])
+        G.add_node(nto, x=s[1][0], y=s[1][1])
+        G.add_edge(nfrom, nto)
+    logging.info("\t... Number of nodes in graph: {}".format(G.number_of_nodes()))
+    logging.info("\t... Number of edges in graph: {}".format(G.number_of_edges()))
+
     sorted_segments = []
-    while len(segments) > 0:
-        logging.debug("\t[OPTIMIZER] Length of segments: {}".format(
-            len(segments)))
-        # start of a new line
-        current_line = []
-        current_line.append(segments.pop())
-        while True:
-            cl_end = current_line[-1][1]
-            indx, rev = pop_line_seg_starts_at(segments, cl_end)
-            if indx == -1:
-                break
-            else:
-                if rev is True:
-                    app_seg = segments.pop(indx)
-                    current_line.append(array([app_seg[1], app_seg[0]]))
-                else:
-                    current_line.append(segments.pop(indx))
-        sorted_segments.extend(current_line)
+    line_len = 0
+    all_lines = []
+    while G.number_of_edges() > 0:
+        source = random.choice(G.nodes())
+        neighbors = get_neighbors(G, source)
+        this_line = []
+
+        if len(neighbors) == 0:
+            G.remove_node(source)
+            continue
+
+        while len(neighbors) > 0:
+            dest = random.choice(neighbors)
+            this_line.append(
+                [asarray([G.node[source]["x"], G.node[source]["y"]]),
+                asarray([G.node[dest]["x"], G.node[dest]["y"]])]
+                )
+            line_len += 1
+            G.remove_edge(source, dest)
+            source = dest
+            neighbors = get_neighbors(G, source)
+        line_len = 0
+        all_lines.append(this_line)
+        G.remove_node(source)
+
+    thresh = 5
+
+    long_lines = [x for x in all_lines if len(x) > thresh]
+    short_lines = [x for x in all_lines if len(x) <= thresh]
+
+    # Sort so that for long line segments we start by drawing the longest
+    long_lines = sorted(long_lines, key = lambda x:-len(x))
+
+    # And for short line segments, sort by x coordinate
+    short_lines = sorted(short_lines, key=lambda x: 1000000*x[0][0][0] + x[0][0][0])
+
+    long_lines_flat = [item for sublist in long_lines for item in sublist]
+    short_lines_flat = [item for sublist in short_lines for item in sublist]
+    return long_lines_flat + short_lines_flat
+
+
+
+
+
+
     return sorted_segments
 
 
 def draw_voronoi(vor, img_size, verbose=False, dryrun=False):
 
-    segments = sort_segments(list(yield_voronoi_segments(vor)))
+    segments = yield_voronoi_segments(vor)
+    segments = sort_segments(segments)
 
     start = time.time()
     with Plotter(verbose=verbose, dryrun=dryrun) as p:
@@ -153,7 +191,7 @@ def plot_voronoi(image, vor, verbose=False):
 
     plt.show(block=False)
 
-    res = raw_input("Do you want to keep this one? [y/n]")
+    res = raw_input("Do you want to keep this one? [y/n]: ")
     return (res in ["y", "Y"], image.shape)
 
 def main():
