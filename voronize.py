@@ -26,7 +26,7 @@ def rgb2gray(rgb):
     return gray
 
 def image_to_voronoi(img_file, n_points, power=power, floor=0,
-                     ceil = 255):
+                     ceil = 255, rotate=0):
     """Given the filename of an image, the number of random points to drop on
     there and a power representing the mapping between pixel darkness and
     probability of containing a point, place points on pixels weighted by their
@@ -34,7 +34,7 @@ def image_to_voronoi(img_file, n_points, power=power, floor=0,
     the scipy voronoi tesselation object
     """
 
-    temp=asarray(Image.open(img_file)).astype('float')
+    temp=asarray(Image.open(img_file).rotate(rotate, expand=True)).astype('float')
     logging.info("Loaded image {}".format(img_file))
     logging.info("Image has size {}x{}".format(temp.shape[0], temp.shape[1]))
 
@@ -87,12 +87,14 @@ def yield_voronoi_segments(vor):
             far_point = vor.vertices[i] + direction * ptp_bound.max()
             yield [vor.vertices[i].astype(int), far_point.astype(int)]
 
+
 def get_neighbors(G, source):
     all_neighbors = [(x, G.degree(x)) for x in G.neighbors(source)]
     if len(all_neighbors) == 0:
         return []
     max_degree = max([x[1] for x in all_neighbors])
     return [x[0] for x in all_neighbors if x[1] == max_degree]
+
 
 def sort_segments(segments):
     logging.info("[OPTIMIZER] Starting path optimization...")
