@@ -123,3 +123,20 @@ class Plotter():
                                          int(point_to[1])))
         self.current_x = point_to[0]
         self.current_y = point_to[1]
+
+    def write_circle(self, center, radius):
+        self._send_raw("PA{},{};".format(int(center[0]),
+                                            int(center[1])))
+        self._send_raw("CI{},45;".format(radius))
+
+    def write_square(self, center, size):
+        self._send_raw("PU{},{};".format(int(center[0]-size/2.0),
+                                        int(center[1]-size/2.0)))
+        self._send_raw("PD{},{};".format(int(center[0]-size/2.0),
+                                        int(center[1]+size/2.0)))
+        self._send_raw("PD{},{};".format(int(center[0]+size/2.0),
+                                        int(center[1]+size/2.0)))
+        self._send_raw("PD{},{};".format(int(center[0]+size/2.0),
+                                        int(center[1]-size/2.0)))
+        self._send_raw("PD{},{};".format(int(center[0]-size/2.0),
+                                        int(center[1]-size/2.0)))

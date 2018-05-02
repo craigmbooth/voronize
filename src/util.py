@@ -1,6 +1,16 @@
 import logging
 import sys
 
+def rgb2gray(rgb):
+    """Given an (nx x ny x 3) array, flatten it into a greyscale image
+
+    The coefficients here are from Matlab's NTSC/PAL implementation
+    """
+    r, g, b = rgb[:,:,0], rgb[:,:,1], rgb[:,:,2]
+    gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
+    return gray
+
+
 def init_logger(verbose=False):
     """Sets up logging for this cli"""
     log_level = logging.DEBUG if verbose is True else logging.INFO
