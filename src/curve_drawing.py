@@ -23,7 +23,8 @@ class CurveDrawing(BaseDrawing):
         self.parser.add_argument("--power", type=float, default=1.0)
         self.parser.add_argument("--floor", type=float, default=0)
         self.parser.add_argument("--ceil", type=float, default=255)
-
+        self.parser.add_argument("--choice-scatter", type=int, default=50)
+        self.parser.add_argument("--jump-probability", type=float, default=0.005)
 
     def perform_computations(self):
 
@@ -68,11 +69,7 @@ class CurveDrawing(BaseDrawing):
         return {"points": pc, "x": x_new, "y": y_new}
 
 
-    @staticmethod
-    def _sort_points(points):
-
-        prob_jump = 0.005
-        choice_scatter = 50
+    def _sort_points(self, points):
 
         sorted_points = []
         np.random.shuffle(points)
@@ -85,13 +82,13 @@ class CurveDrawing(BaseDrawing):
             xc = sorted_points[-1][0]
             yc = sorted_points[-1][1]
 
-            if random.random() < prob_jump:
+            if random.random() < self.args.jump_probability:
                 np.random.shuffle(points)
                 first, rest = points[0], points[1:]
                 points = rest
             else:
                 points.sort(key=lambda x: (x[0]-xc)**2 + (x[1]-yc)**2)
-                max_pick = min([len(points), choice_scatter])
+                max_pick = min([len(points), self.args.choice_scatter])
                 selected_point = random.randint(0, max_pick-1)
                 first = points[selected_point]
                 del(points[selected_point])
