@@ -8,7 +8,7 @@ class Plotter():
 
     def __init__(self, verbose=False, baudrate=9600, addr=5, gpib=True,
                  paper_size="MET-A4", dryrun=False,
-                 device="/dev/tty.usbserial-PX1ULOFL"):
+                 device="/dev/ttyUSB0"):
 
         self.verbose = verbose
         self.dryrun = dryrun
@@ -85,8 +85,8 @@ class Plotter():
 
         # Check if the plotter is ready for input
         while True:
-            self.serial.write("OS;"+"\r")
-            status = self.serial.readline().rstrip("\r\n")
+            self.serial.write(b"OS;"+b"\r")
+            status = self.serial.readline().rstrip(b"\r\n")
             status_bin = "{0:b}".format(int(status))
             ready = status_bin[-5]
             if ready == "1":
@@ -97,10 +97,10 @@ class Plotter():
             time.sleep(0.01)
 
         # The actual send
-        self.serial.write(string+"\r")
+        self.serial.write(bytes(string, "utf-8")+b"\r")
 
         if read is True:
-            return self.serial.readline().rstrip("\r\n")
+            return self.serial.readline().rstrip(b"\r\n")
 
     def set_image_scale(self, img_size):
 

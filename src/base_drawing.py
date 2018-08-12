@@ -24,7 +24,9 @@ class BaseDrawing(object):
 
         if self.display_image() is True:
             start = time.time()
-            self.plot_image()
+            with Plotter(verbose=self.args.verbose,
+                         dryrun=self.args.dryrun) as self.p:
+                self.plot_image()
             end = time.time()
             logging.info("Drawing took {}s".format((end-start)))
         else:

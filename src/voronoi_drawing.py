@@ -188,10 +188,9 @@ class VoronoiDrawing(BaseDrawing):
 
         img_size = self.data["image"].shape
 
-        with Plotter(verbose=self.args.verbose, dryrun=self.args.dryrun) as p:
-            p.set_image_scale(img_size)
-            for segment in segments:
-                p.write_segment(segment)
+        self.p.set_image_scale(img_size)
+        for segment in segments:
+            self.p.write_segment(segment)
 
 
 if __name__ == "__main__":
