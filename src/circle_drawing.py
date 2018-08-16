@@ -69,8 +69,6 @@ class CircleDrawing(BaseDrawing):
     def display_image(self):
         plt.plot(self.data["x"], self.data["y"], 'k', linewidth=1)
         plt.show(block=False)
-        res = input("Do you want to keep this one? [y/n]: ")
-        return res in ["y", "Y"]
 
 
     def plot_image(self):

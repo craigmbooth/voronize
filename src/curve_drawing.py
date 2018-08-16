@@ -89,6 +89,8 @@ class CurveDrawing(BaseDrawing):
             else:
                 points.sort(key=lambda x: (x[0]-xc)**2 + (x[1]-yc)**2)
                 max_pick = min([len(points), self.args.choice_scatter])
+                if len(points) < self.args.choice_scatter:
+                    break
                 selected_point = random.randint(0, max_pick-1)
                 first = points[selected_point]
                 del(points[selected_point])
@@ -108,12 +110,9 @@ class CurveDrawing(BaseDrawing):
         px = [x[0] for x in points]
         py = [x[1] for x in points]
 
-        #plt.plot(px, py, 'r.')
         plt.plot(x, y, 'k', linewidth=1)
         plt.show(block=False)
 
-        res = input("Do you want to keep this one? [y/n]: ")
-        return res in ["y", "Y"]
 
 
     def plot_image(self):

@@ -177,9 +177,6 @@ class VoronoiDrawing(BaseDrawing):
 
         plt.show(block=False)
 
-        res = input("Do you want to keep this one? [y/n]: ")
-        return res in ["y", "Y"]
-
 
     def plot_image(self):
 

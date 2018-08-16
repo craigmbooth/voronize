@@ -23,7 +23,11 @@ class BaseDrawing(object):
 
         self.data = self.perform_computations()
 
-        if self.display_image() is True:
+        self.display_image()
+        res = input("Do you want to keep this one? [y/n]: ")
+        keep = res in ["y", "Y"]
+
+        if keep is True:
             start = time.time()
             with Plotter(verbose=self.args.verbose,
                          dryrun=self.args.dryrun) as self.p:
