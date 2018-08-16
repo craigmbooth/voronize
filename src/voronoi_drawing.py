@@ -17,21 +17,29 @@ IMG_SCALE = 8
 class VoronoiDrawing(BaseDrawing):
 
     def get_command_line_args(self):
-        self.parser.add_argument("filename", type=str)
-        self.parser.add_argument("vertices", type=int)
-        self.parser.add_argument("--power", type=float, default=1.0)
-        self.parser.add_argument("--floor", type=float, default=0)
-        self.parser.add_argument("--ceil", type=float, default=255)
-        self.parser.add_argument('--rotate', type=float, default=0)
+        self.parser.add_argument("filename", type=str,
+            help="Filenanme of image file to load")
+        self.parser.add_argument("vertices", type=int,
+            help="Number of points to calculate tesselation from")
+        self.parser.add_argument("--power", type=float, default=1.0,
+            help="Exponent between darkness of pixel and probability of "
+                                     "containing a point")
+        self.parser.add_argument("--floor", type=float, default=0,
+            help="Set all pixels with brightness less than this to zero")
+        self.parser.add_argument("--ceil", type=float, default=255,
+            help="Set all pixels with brightness above this to max brightness")
+        self.parser.add_argument('--rotate', type=float, default=0,
+            help="Number of degrees by which the input image should be rotated")
         self.parser.set_defaults(rotate=False)
 
 
     def perform_computations(self):
-        """Given the filename of an image, the number of random points to drop on
-        there and a power representing the mapping between pixel darkness and
-        probability of containing a point, place points on pixels weighted by their
-        darkness, then do a voronoi tessellation on the resulting points and return
-        the scipy voronoi tesselation object
+        """Given the filename of an image, the number of random points
+        to drop on there and a power representing the mapping between
+        pixel darkness and probability of containing a point, place
+        points on pixels weighted by their darkness, then do a voronoi
+        tessellation on the resulting points and return the scipy
+        voronoi tesselation object
         """
 
         img=np.asarray(Image.open(
@@ -67,6 +75,9 @@ class VoronoiDrawing(BaseDrawing):
         return {"image": img, "voronoi": Voronoi(points)}
 
     def _yield_voronoi_segments(self, vor):
+        """Given a voronoi tesselation, yield (x,y) pairs for the line
+        segments
+        """
 
         center = vor.points.mean(axis=0)
         ptp_bound = vor.points.ptp(axis=0)

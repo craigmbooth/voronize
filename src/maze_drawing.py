@@ -18,8 +18,10 @@ sys.setrecursionlimit(15000)
 class MazeDrawing(BaseDrawing):
 
     def get_command_line_args(self):
-        self.parser.add_argument("--nx", type=int, default=20)
-        self.parser.add_argument("--ny", type=int, default=20)
+        self.parser.add_argument("--nx", type=int, default=20,
+            help="Number of grid cells in the x direction")
+        self.parser.add_argument("--ny", type=int, default=20,
+            help="Number of grid cells in the y direction")
 
 
     def perform_computations(self):

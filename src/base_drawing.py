@@ -6,13 +6,16 @@ from plotter import Plotter
 import util
 
 class BaseDrawing(object):
+    """To make a new drawing, subclass this and implement the four functions"""
 
     def __init__(self):
 
         self.parser = argparse.ArgumentParser()
-        self.parser.add_argument('--verbose', dest='verbose', action='store_true')
+        self.parser.add_argument('--verbose', dest='verbose',
+                                 action='store_true')
         self.parser.set_defaults(verbose=False)
-        self.parser.add_argument('--dry-run', dest='dryrun', action='store_true')
+        self.parser.add_argument('--dry-run', dest='dryrun',
+                                 action='store_true')
         self.parser.set_defaults(dryrun=False)
 
         self.get_command_line_args()
@@ -39,22 +42,30 @@ class BaseDrawing(object):
 
 
     def get_command_line_args(self):
+        """Implement a function that mutates `self.parser` with any command
+        line parameters that are necessary for this specific drawing
+        """
         raise NotImplementedError("You must implement the "
                                   "get_command_line_args function")
 
 
     def perform_computations(self):
+        """Do any data processing that is necessary to draw this image.  The
+        return value from this function will be put in self.data
+        """
         raise NotImplementedError("You must implement the perform_computations "
                                   "function")
 
 
     def display_image(self):
-        """Returns keep, a boolean stating whether or not to keep the image
-        """
+        """Show an image so the user can select whether to keep it."""
         raise NotImplementedError("You must implement the display_image "
                                   "function")
 
 
     def plot_image(self):
+        """Send all relevant plotter commands to the plotter.  Note that at this
+        point you have access to self.p, the plotter itself.
+        """
         raise NotImplementedError("You must implement the plot_image "
                                   "function")
